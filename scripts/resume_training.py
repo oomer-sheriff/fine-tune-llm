@@ -20,8 +20,8 @@ def resume(model_config, train_config, dataset):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_config", default="../configs/model_config.yaml")
-    parser.add_argument("--train_config", default="../configs/train_config.yaml")
+    parser.add_argument("--model_config", default="configs/model_config.yaml")
+    parser.add_argument("--train_config", default="configs/train_config.yaml")
     parser.add_argument("--dataset", required=True)
     args = parser.parse_args()
     
