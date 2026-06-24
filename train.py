@@ -2,10 +2,9 @@ import yaml
 import argparse
 from pathlib import Path
 from datasets import load_dataset
-from unsloth import FastLanguageModel
+from unsloth import FastLanguageModel, is_bfloat16_supported
 from trl import SFTTrainer
 from transformers import TrainingArguments
-from unsloth.is_bf16_supported import is_bfloat16_supported
 import os
 
 def load_config(config_path):
