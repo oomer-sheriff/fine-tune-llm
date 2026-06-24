@@ -3,8 +3,7 @@ import argparse
 from pathlib import Path
 from datasets import load_dataset
 from unsloth import FastLanguageModel, is_bfloat16_supported
-from trl import SFTTrainer
-from transformers import TrainingArguments
+from trl import SFTTrainer, SFTConfig
 import os
 
 def load_config(config_path):
@@ -66,7 +65,11 @@ def train(model_config_path, train_config_path, dataset_path, resume_from_checkp
     output_dir = Path(train_config['storage']['drive_path']) / train_config['storage']['checkpoint_dir']
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    training_args = TrainingArguments(
+    training_args = SFTConfig(
+        dataset_text_field = "text",
+        max_seq_length = max_seq_length,
+        dataset_num_proc = 2,
+        packing = False,
         per_device_train_batch_size = train_config['training_settings']['per_device_train_batch_size'],
         gradient_accumulation_steps = train_config['training_settings']['gradient_accumulation_steps'],
         warmup_steps = train_config['training_settings']['warmup_steps'],
@@ -88,10 +91,6 @@ def train(model_config_path, train_config_path, dataset_path, resume_from_checkp
         model = model,
         tokenizer = tokenizer,
         train_dataset = dataset,
-        dataset_text_field = "text",
-        max_seq_length = max_seq_length,
-        dataset_num_proc = 2,
-        packing = False,
         args = training_args,
     )
     
