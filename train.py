@@ -22,7 +22,7 @@ def format_prompt(example):
     
     return {"text": prompt}
 
-def train(model_config_path, train_config_path, dataset_path, resume_from_checkpoint=False):
+def train(model_config_path, train_config_path, dataset_path, val_dataset_path=None, resume_from_checkpoint=False):
     model_config = load_config(model_config_path)
     train_config = load_config(train_config_path)
     
@@ -62,6 +62,12 @@ def train(model_config_path, train_config_path, dataset_path, resume_from_checkp
         
     dataset = dataset.map(format_and_eos)
     
+    val_dataset = None
+    if val_dataset_path:
+        print(f"Loading validation dataset from {val_dataset_path}...")
+        val_dataset = load_dataset("json", data_files={"val": val_dataset_path}, split="val")
+        val_dataset = val_dataset.map(format_and_eos)
+    
     output_dir = Path(train_config['storage']['drive_path']) / train_config['storage']['checkpoint_dir']
     output_dir.mkdir(parents=True, exist_ok=True)
     
@@ -78,6 +84,8 @@ def train(model_config_path, train_config_path, dataset_path, resume_from_checkp
         fp16 = not is_bfloat16_supported(),
         bf16 = is_bfloat16_supported(),
         logging_steps = train_config['training_settings']['logging_steps'],
+        eval_strategy = train_config['training_settings'].get('eval_strategy', 'no'),
+        eval_steps = train_config['training_settings'].get('eval_steps', None),
         optim = train_config['training_settings']['optim'],
         weight_decay = train_config['training_settings']['weight_decay'],
         lr_scheduler_type = train_config['training_settings']['lr_scheduler_type'],
@@ -91,6 +99,7 @@ def train(model_config_path, train_config_path, dataset_path, resume_from_checkp
         model = model,
         tokenizer = tokenizer,
         train_dataset = dataset,
+        eval_dataset = val_dataset,
         args = training_args,
     )
     
@@ -109,7 +118,8 @@ if __name__ == "__main__":
     parser.add_argument("--model_config", default="configs/model_config.yaml")
     parser.add_argument("--train_config", default="configs/train_config.yaml")
     parser.add_argument("--dataset", required=True)
+    parser.add_argument("--val_dataset", default=None, help="Path to the validation dataset")
     parser.add_argument("--resume", action="store_true", help="Resume from latest checkpoint")
     args = parser.parse_args()
     
-    train(args.model_config, args.train_config, args.dataset, args.resume)
+    train(args.model_config, args.train_config, args.dataset, args.val_dataset, args.resume)
